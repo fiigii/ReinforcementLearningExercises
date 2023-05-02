@@ -79,7 +79,7 @@ def discretize(sample, grid):
     """
     return list(np.digitize(s, g) for s, g in zip(sample, grid))
 
-"""
+'''
 low = [-1.0, -5.0]
 high = [1.0, 5.0]
 grid = create_uniform_grid(low, high) 
@@ -92,10 +92,13 @@ samples = np.array(
      [ 0.8 ,  4.0],
      [ 0.81,  4.1],
      [ 1.0 ,  5.0]])
+
 discretized_samples = np.array([discretize(sample, grid) for sample in samples])
+print("\nnp.digitize:", repr(np.digitize(samples[3][0], grid[0])), sep="\n")
+print("\nGrid:", repr(grid), sep="\n")
 print("\nSamples:", repr(samples), sep="\n")
 print("\nDiscretized samples:", repr(discretized_samples), sep="\n")
-"""
+'''
 
 class QLearningAgent:
     """Q-Learning agent that can act on a continuous state space by discretizing it."""

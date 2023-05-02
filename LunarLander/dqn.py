@@ -5,10 +5,6 @@ import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
 
-from pyvirtualdisplay import Display
-display = Display(visible=0, size=(1400, 900))
-display.start()
-
 env = gymnasium.make('LunarLander-v2', render_mode="rgb_array")
 print('State shape: ', env.observation_space.shape)
 print('Number of actions: ', env.action_space.n)

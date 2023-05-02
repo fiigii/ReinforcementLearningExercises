@@ -18,8 +18,11 @@ UPDATE_EVERY = 4        # how often to update the network
 device_name = "cpu"
 if torch.cuda.is_available():
     device_name = "cuda:0"
+'''
+# MPS is slower than M1Pro CPU
 elif torch.backends.mps.is_available():
     device_name = "mps"
+'''
 
 device = torch.device(device_name)
 
