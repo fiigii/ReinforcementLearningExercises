@@ -3,6 +3,7 @@ import cupy as cp
 import _pickle as pickle
 import gymnasium as gym
 
+import time
 # hyperparameters
 H = 200 # number of hidden layer neurons
 batch_size = 10 # every how many episodes to do a param update?
@@ -52,7 +53,7 @@ def policy_forward(x):
   p = sigmoid(logp)
   return p, h # return probability of taking action 2, and hidden state
 
-def policy_backward(eph, epdlogp):
+def policy_backward(eph, epx, epdlogp):
   """ backward pass. (eph is array of intermediate hidden states) """
   dW2 = cp.dot(eph.T, epdlogp).ravel()
   dh = cp.outer(epdlogp, model['W2'])
@@ -98,25 +99,30 @@ while True:
     episode_number += 1
 
     # stack together all inputs, hidden states, action gradients, and rewards for this episode
+    # convert lists of matrix/vector to higher dimension matrix
+    # length of xs, hs, dlogps, and drs : the number of states (game frames) we have seen in the episode
     epx = cp.vstack(xs)
     eph = cp.vstack(hs)
+    # epdlogp and epdlogp are the key of PG
     epdlogp = cp.vstack(dlogps)
     epr = cp.vstack(drs)
     xs,hs,dlogps,drs = [],[],[],[] # reset array memory
 
     # compute the discounted reward backwards through time
+    # convert the reward of each episode to reward of each action, where each action's reward is 1 or -1
+    # that means this action causes final win or lose
     discounted_epr = discount_rewards(epr)
     # standardize the rewards to be unit normal (helps control the gradient estimator variance)
     discounted_epr -= cp.mean(discounted_epr)
     discounted_epr /= cp.std(discounted_epr)
 
     epdlogp *= discounted_epr # modulate the gradient with advantage (PG magic happens right here.)
-    grad = policy_backward(eph, epdlogp)
-    for k in model: grad_buffer[k] += grad[k] # accumulate grad over batch
+    grad = policy_backward(eph, epx, epdlogp)
+    for k in model: grad_buffer[k] += grad[k] # accumulate (element-wise) grad over batch
 
     # perform rmsprop parameter update every batch_size episodes
     if episode_number % batch_size == 0:
-      for k,v in model.items():
+      for k,v in model.items(): # k = 'W1' | 'W2'
         g = grad_buffer[k] # gradient
         rmsprop_cache[k] = decay_rate * rmsprop_cache[k] + (1 - decay_rate) * g**2
         model[k] += learning_rate * g / (cp.sqrt(rmsprop_cache[k]) + 1e-5)
